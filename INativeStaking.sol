@@ -146,9 +146,50 @@ interface NativeStaking {
      */
     function forceApplyMinCommission(address validatorStash) external;
 
+    /**
+     * @notice Adds a validator's stash account to the whitelist.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      When the whitelist is enabled, only validators in this list can validate.
+     * @param stash The stash address of the validator to add to the whitelist.
+     */
+    function addToValidatorWhitelist(address stash) external;
+
+    /**
+     * @notice Removes a validator's stash account from the whitelist.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     * @param stash The stash address of the validator to remove from the whitelist.
+     */
+    function removeFromValidatorWhitelist(address stash) external;
+
+    /**
+     * @notice Enables or disables the validator whitelist.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      If true, only whitelisted validators can validate. If false, any account can validate.
+     * @param is_enabled Boolean flag to enable (true) or disable (false) the whitelist.
+     */
+    function setIsValidatorWhitelistEnabled(bool is_enabled) external;
+
     /*************************************************
      *                    Views                      *
      *************************************************/
+
+    /**
+     * @notice Returns the list of all validator addresses currently in the whitelist.
+     * @return An array of addresses representing the validator whitelist.
+     */
+    function validatorWhitelist() external view returns (address[] memory);
+
+    /**
+     * @notice Returns whether the stash address is in the validator whitelist
+     * @return Boolean indicating whether the given address is whitelisted
+     */
+    function isWhitelistedValidator(address stash) external view returns (bool);
+
+    /**
+     * @notice Returns whether the validator whitelist is enabled.
+     * @return Boolean indicating whether the whitelist is enabled.
+     */
+    function isValidatorWhitelistEnabled() external view returns (bool);
 
     /**
      * @notice Returns the ideal validator count.
