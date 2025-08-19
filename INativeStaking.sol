@@ -123,8 +123,8 @@ interface NativeStaking {
      * @dev Any account can call this function, even if it is not one of the stakers.
      *      If rewards are not claimed in `Config::HistoryDepth` eras, they are lost.
      * @param validatorStash Stash account of the validator.
-     * @param era Era for which to payout rewards (between [current_era - history_depth; current_era]).
-     * @param page Page index of nominators to pay out (between 0 and num_nominators / 64).
+     * @param era Era for which to payout rewards (between [currentEra - historyDepth; currentEra]).
+     * @param page Page index of nominators to pay out (between 0 and numNominators / 64).
      */
     function payoutStakersByPage(address validatorStash, uint32 era, uint32 page) external;
 
@@ -165,9 +165,73 @@ interface NativeStaking {
      * @notice Enables or disables the validator whitelist.
      * @dev Only callable by an authorized account (e.g., root/sudo).
      *      If true, only whitelisted validators can validate. If false, any account can validate.
-     * @param is_enabled Boolean flag to enable (true) or disable (false) the whitelist.
+     * @param isEnabled Boolean flag to enable (true) or disable (false) the whitelist.
      */
-    function setIsValidatorWhitelistEnabled(bool is_enabled) external;
+    function setIsValidatorWhitelistEnabled(bool isEnabled) external;
+
+    /**
+     * @notice Force there to be a new era at the end of the next session. After this, it will be reset to normal (non-forced) behaviour.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     * @dev Warning: The election process starts multiple blocks before the end of the era. If this is called just before a new era is triggered, the election process may not have enough blocks to get a result.
+     */
+    function forceNewEra() external;
+
+    /**
+     * @notice Force a current staker to become completely unstaked, immediately.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     * @param stash Address of the staker to unstake.
+     * @param numSlashingSpans indicates the number of metadata slashing spans to clear when this call results in a complete removal of all the data related to the stash account. In this case, the numSlashingSpans must be larger or equal to the number of slashing spans associated with the stash account in the SlashingSpans storage type, otherwise the call will fail. The call gas cost is directly proportional to numSlashingSpans.
+     */
+    function forceUnstake(address stash, uint32 numSlashingSpans) external;
+
+    /**
+     * @notice Sets the ideal number of validators.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     * @param count The ideal number of validators to set.
+     */
+    function setValidatorCount(uint32 count) external;
+
+    /**
+     * @notice Sets the minimum active bond needed to be a validator.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      NOTE: Existing validators will not be affected by this update.
+     *      To kick validators under the new limits, chillOther should be called.
+     * @param minValidatorBond The minimum active bond needed to be a validator.
+     */
+    function setMinValidatorBond(uint128 minValidatorBond) external;
+
+    /**
+     * @notice Sets the minimum active bond needed to be a nominator.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      NOTE: Existing nominators will not be affected by this update.
+     *      To kick nominators under the new limits, chillOther should be called.
+     * @param minNominatorBond The minimum active bond needed to be a nominator.
+     */
+    function setMinNominatorBond(uint128 minNominatorBond) external;
+
+    /**
+     * @notice Sets the max number of users who can be a nominator at once.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      NOTE: Existing nominators will not be affected by this update.
+     * @param maxNominatorCount The max number of users who can be a nominator at once.
+     */
+    function setMaxNominatorCount(uint32 maxNominatorCount) external;
+
+    /**
+     * @notice Sets the max number of users who can be a validator at once.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      NOTE: Existing validators will not be affected by this update.
+     * @param maxValidatorCount The max number of users who can be a validator at once.
+     */
+    function setMaxValidatorCount(uint32 maxValidatorCount) external;
+
+    /**
+     * @notice Sets the minimum amount of commission that each validators must maintain.
+     * @dev Only callable by an authorized account (e.g., root/sudo).
+     *      This is checked only upon calling validate. Existing validators are not affected.
+     * @param minCommission A perbill (10% = 0.1 * 10^9). The minimum amount of commission that each validators must maintain.
+     */
+    function setMinCommission(uint32 minCommission) external;
 
     /*************************************************
      *                    Views                      *
@@ -490,7 +554,7 @@ interface NativeStaking {
      *************************************************/
 
     /**
-    * @notice The eras in the set [current_era - history_depth; current_era] are stored in history.
+    * @notice The eras in the set [currentEra - historyDepth; currentEra] are stored in history.
     * @return Number of eras to keep in history
     */
     function historyDepth() external view returns (uint32);

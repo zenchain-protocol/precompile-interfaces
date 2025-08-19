@@ -24,12 +24,12 @@ interface VaultStaking {
         /**
          * @dev The address of the associated liquidity pool.
          * @notice This address serves as both the liquidity pair contract and the LP token address.
-         * @notice Used for swapping tokens and measuring liquidity positions.
+         * @notice Used for measuring liquidity positions.
          */
         address poolAddress;
 
         /**
-         * @dev The address of the non-native swap token in the liquidity pool.
+         * @dev The address of the non-native token in the liquidity pool.
          */
         address tokenAddress;
 
@@ -89,87 +89,40 @@ interface VaultStaking {
     /**
      * @notice Distributes rewards for a specific vault.
      * @dev Transfers accumulated staking rewards from the reward account to the ZenVault contract.
-     *      The rewards are swapped into LP tokens through the configured swap router
-     *      and distributed proportionally to stakers based on their share of the virtual bond.
-     *      This function should be called after rewards have accumulated in the reward account.
      * @param vaultAddress The address of the vault to distribute rewards for.
      * @custom:throws VaultNotFound if the specified vault is not registered.
      * @custom:throws NoPendingEraRewards if there are no rewards to distribute.
-     * @custom:throws SwapRouterNotSet if no swap router has been configured.
-     * @custom:throws Various swap-related errors if token exchange fails.
      */
     function distributeRewards(address vaultAddress) external;
 
     /**
      * @notice Applies any pending slash for a specific vault.
+     * @dev Requires root privileges.
      * @param vaultAddress The address of the vault to apply the pending slash for.
      */
     function applyPendingSlash(address vaultAddress) external;
 
     /**
      * @notice Registers a new vault.
+     * @dev Requires root privileges.
      * @param vaultAddress The address of the vault to register.
      */
     function registerVault(address vaultAddress) external;
 
     /**
      * @notice Deregisters an existing vault.
+     * @dev Requires root privileges.
      * @param vaultAddress The address of the vault to deregister.
      */
     function deregisterVault(address vaultAddress) external;
 
     /**
      * @notice Sets the nomination targets for a vault.
+     * @dev Requires root privileges.
      * @param vaultAddress The address of the vault.
      * @param nominationTargets The list of addresses to nominate.
      */
     function setNominations(address vaultAddress, address[] calldata nominationTargets) external;
-
-    /**
-     * @notice Sets the swap router address used by the pallet.
-     * @param routerAddress The address of the swap router contract.
-     */
-    function setSwapRouter(address routerAddress) external;
-
-    /**
-     * @notice Enables or disables staking for a specific vault.
-     * @param vaultAddress The address of the vault.
-     * @param isEnabled Whether staking should be enabled.
-     * @param _unchecked Skip safety checks if true (requires admin origin).
-     */
-    function setIsStakingEnabled(address vaultAddress, bool isEnabled, bool _unchecked) external;
-
-    /**
-     * @notice Enables or disables withdrawals for a specific vault.
-     * @param vaultAddress The address of the vault.
-     * @param isEnabled Whether withdrawals should be enabled.
-     * @param _unchecked Skip safety checks if true (requires admin origin).
-     */
-    function setIsWithdrawEnabled(address vaultAddress, bool isEnabled, bool _unchecked) external;
-
-    /**
-     * @notice Sets the minimum stake required for a vault.
-     * @param vaultAddress The address of the vault.
-     * @param minStake The minimum amount required to stake.
-     * @param _unchecked Skip safety checks if true (requires admin origin).
-     */
-    function setMinStake(address vaultAddress, uint256 minStake, bool _unchecked) external;
-
-    /**
-     * @notice Sets the maximum number of unlocking chunks allowed for a vault.
-     * @param vaultAddress The address of the vault.
-     * @param maxUnlockChunks The maximum number of chunks.
-     * @param _unchecked Skip safety checks if true (requires admin origin).
-     */
-    function setMaxUnlockChunks(address vaultAddress, uint8 maxUnlockChunks, bool _unchecked) external;
-
-    /**
-     * @notice Sets the associated native staking address for a vault.
-     * @param vaultAddress The address of the vault.
-     * @param nativeStakingAddress The corresponding native staking address (e.g., Polkadot address).
-     * @param _unchecked Skip safety checks if true (requires admin origin).
-     */
-    function setNativeStakingAddress(address vaultAddress, address nativeStakingAddress, bool _unchecked) external;
 
     // --- View Functions ---
 
@@ -224,33 +177,23 @@ interface VaultStaking {
     function pendingSlashes(address vaultAddress) external view returns (PendingSlash[] memory slashes);
 
     /**
-     * @notice Returns the configured swap router address.
-     * @dev The swap router is used during reward distribution to convert native tokens
-     *      into LP tokens before distributing to stakers.
-     *      This address must be properly set before rewards can be distributed.
-     * @return routerAddress The address of the swap router contract.
-     *         Returns address(0) if no router has been configured.
-     */
-    function swapRouter() external view returns (address routerAddress);
-
-    /**
-     * @notice Returns the last era index when vault updates were processed.
+     * @notice Returns the last era index when vault bond updates were processed.
      * @dev This value tracks the most recent era during which the vault system was
      *      synchronized with the underlying staking system.
      *      Used internally to determine when new updates need to be processed.
      * @return eraIndex The last update era index as a uint32.
      */
-    function lastUpdateEra() external view returns (uint32 eraIndex);
+    function lastBondUpdateEra() external view returns (uint32 eraIndex);
 
     /**
-     * @notice Returns the queue of vaults pending updates.
+     * @notice Returns the queue of vaults pending bond updates.
      * @dev This queue tracks vaults that need to be synchronized with the underlying
      *      staking system in the next processing cycle.
      *      Vaults are added to this queue once per era.
      *      The queue is automatically processed once per era.
      * @return queue An array of vault addresses that are waiting to be updated.
      */
-    function vaultUpdateQueue() external view returns (address[] memory queue);
+    function vaultBondUpdateQueue() external view returns (address[] memory queue);
 
     // --- System Functions ---
 
